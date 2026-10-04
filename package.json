@@ -1,0 +1,16 @@
+{
+  "name": "vide-grenier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Petite boutique de seconde main : catalogue, panier, paiement à la livraison, admin protégé.",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "hash-password": "node scripts/hash-password.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  }
+}

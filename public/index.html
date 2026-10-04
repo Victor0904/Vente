@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Vide-grenier</title>
+  <meta name="description" content="Objets de seconde main. Paiement à la livraison.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23047857'/%3E%3Cpath d='M6 9h12l-1 9H7z' fill='white'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0a100e">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <h1 data-shop-name>Vide-grenier</h1>
+        <small data-shop-desc>Seconde main · paiement à la livraison</small>
+      </div>
+      <div class="header-actions">
+        <a class="btn btn-link" href="/suivi/"><span class="hide-sm">Suivre ma commande</span><span class="show-sm">Suivi</span></a>
+        <button type="button" class="btn btn-ghost cart-toggle" id="cartToggle" aria-controls="cart" aria-expanded="false">
+          <span id="cartToggleIcon"></span>
+          <span>Panier</span>
+          <span class="badge" id="cartBadge" hidden>0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section aria-labelledby="catalogTitle">
+      <h2 id="catalogTitle" class="sr-only">Catalogue</h2>
+      <div class="grid" id="catalog" aria-busy="true">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+
+    <aside class="cart" id="cart" aria-labelledby="cartTitle">
+      <div class="cart-head">
+        <h2 id="cartTitle">Votre panier</h2>
+        <button type="button" class="icon-btn cart-close" id="cartClose" aria-label="Fermer le panier"></button>
+      </div>
+      <div class="cart-scroll" id="cartBody"></div>
+      <div class="cart-foot" id="cartFoot"></div>
+    </aside>
+  </main>
+
+  <div class="overlay" id="overlay"></div>
+  <button type="button" class="btn btn-accent cart-fab" id="cartFab" hidden></button>
+
+  <script src="/common.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
