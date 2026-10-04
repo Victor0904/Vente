@@ -59,4 +59,4 @@ En local, les données sont des fichiers JSON dans `data/`.
 - Les commandes et les adresses des clients restent dans Netlify Blobs, jamais dans GitHub.
 - Les photos sont vérifiées (vrai JPG/PNG/WebP), redimensionnées et débarrassées de leurs métadonnées (GPS) avant l'envoi.
 
-Chaque annonce est un objet unique, sans quantité. Elle reste en ligne jusqu'à ce que vous la supprimiez depuis l'admin.
+Pas de stock à gérer : le client choisit la quantité (1 à 20 par article) et l'annonce reste en ligne jusqu'à ce que vous la supprimiez depuis l'admin. Les commandes gardent le titre, le prix et la quantité, même après suppression de l'annonce.

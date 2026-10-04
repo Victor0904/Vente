@@ -224,7 +224,7 @@ function orderCard(o) {
         h('div', {}, icon('phone', 16), h('a', { href: `tel:${o.customer.phone.replace(/[^0-9+]/g, '')}` }, o.customer.phone))),
       h('div', { class: 'recap' },
         o.items.map((it) => h('div', { class: 'recap-line' },
-          h('span', {}, it.title), h('span', {}, formatPrice(it.price)))),
+          h('span', {}, (it.qty || 1) > 1 ? `${it.qty} × ${it.title}` : it.title), h('span', {}, formatPrice(it.price * (it.qty || 1))))),
         h('div', { class: 'recap-line total-row' }, h('span', {}, 'À encaisser'), h('span', {}, formatPrice(o.total))))),
     h('div', { class: 'order-actions' }, actions));
 }

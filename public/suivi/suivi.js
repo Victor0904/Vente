@@ -25,7 +25,7 @@ function orderCard(o) {
         h('strong', {}, o.customer.name),
         h('div', {}, icon('pin', 16), o.customer.address)),
       h('div', { class: 'recap' },
-        o.items.map((it) => h('div', { class: 'recap-line' }, h('span', {}, it.title), h('span', {}, formatPrice(it.price)))),
+        o.items.map((it) => h('div', { class: 'recap-line' }, h('span', {}, (it.qty || 1) > 1 ? `${it.qty} × ${it.title}` : it.title), h('span', {}, formatPrice(it.price * (it.qty || 1))))),
         h('div', { class: 'recap-line total-row' }, h('span', {}, 'À payer sur place'), h('span', {}, formatPrice(o.total))))),
     h('div', { class: 'order-actions' },
       h('span', { class: 'note' }, 'Code ', h('strong', { class: 'code-inline' }, formatCode(o.code))),

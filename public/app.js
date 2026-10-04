@@ -1,9 +1,10 @@
 'use strict';
 
 const CART_KEY = 'vg-cart';
+const MAX_QTY = 20;
 const state = {
   products: [],
-  cart: new Set(), // ids des annonces (objets uniques)
+  cart: new Map(), // id de l'annonce -> quantité
   step: 'cart', // cart | checkout | done
   draft: { name: '', address: '', phone: '', pay: false },
   errors: {},
@@ -19,21 +20,25 @@ const $ = (id) => document.getElementById(id);
 
 function loadCart() {
   try {
-    const raw = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-    if (Array.isArray(raw)) for (const id of raw) if (typeof id === 'string') state.cart.add(id);
+    const raw = JSON.parse(localStorage.getItem(CART_KEY) || '{}');
+    // Ancien format (liste d'ids) : quantité 1
+    const entries = Array.isArray(raw) ? raw.map((id) => [id, 1]) : Object.entries(raw);
+    for (const [id, qty] of entries) {
+      if (typeof id === 'string' && Number.isInteger(qty) && qty > 0) state.cart.set(id, Math.min(qty, MAX_QTY));
+    }
   } catch { /* stockage indisponible : panier vide */ }
 }
 
 function saveCart() {
   try {
-    localStorage.setItem(CART_KEY, JSON.stringify([...state.cart]));
+    localStorage.setItem(CART_KEY, JSON.stringify(Object.fromEntries(state.cart)));
   } catch { /* ignoré */ }
 }
 
 // Retire du panier les annonces supprimées entre-temps
 function reconcileCart() {
   let changed = false;
-  for (const id of state.cart) {
+  for (const id of state.cart.keys()) {
     if (!productById(id)) { state.cart.delete(id); changed = true; }
   }
   if (changed) saveCart();
@@ -42,16 +47,32 @@ function reconcileCart() {
 
 const productById = (id) => state.products.find((p) => p.id === id);
 
-const cartItems = () => [...state.cart].map(productById).filter(Boolean);
-const cartTotal = () => cartItems().reduce((sum, p) => sum + p.price, 0);
+const cartLines = () => [...state.cart].map(([id, qty]) => ({ p: productById(id), qty })).filter((l) => l.p);
+const cartCount = () => cartLines().reduce((sum, l) => sum + l.qty, 0);
+const cartTotal = () => cartLines().reduce((sum, l) => sum + l.p.price * l.qty, 0);
 
-function setInCart(id, inCart) {
-  if (inCart) state.cart.add(id);
-  else state.cart.delete(id);
+function setQty(id, qty) {
+  qty = Math.max(0, Math.min(qty, MAX_QTY));
+  if (qty === 0) state.cart.delete(id);
+  else state.cart.set(id, qty);
   saveCart();
   if (state.step === 'done') state.step = 'cart';
   if (state.cart.size === 0 && state.step === 'checkout') state.step = 'cart';
   render();
+}
+
+// Boutons − quantité + (utilisés sur la carte produit et dans le panier)
+function stepper(p, qty) {
+  return h('div', { class: 'stepper', role: 'group', 'aria-label': `Quantité de ${p.title}` },
+    h('button', {
+      type: 'button', class: 'icon-btn', 'aria-label': qty === 1 ? `Retirer ${p.title} du panier` : `Un ${p.title} de moins`,
+      onclick: () => setQty(p.id, qty - 1),
+    }, icon(qty === 1 ? 'trash' : 'minus', 16)),
+    h('span', { class: 'qty', 'aria-live': 'polite' }, qty),
+    h('button', {
+      type: 'button', class: 'icon-btn', 'aria-label': `Un ${p.title} de plus`, disabled: qty >= MAX_QTY,
+      onclick: () => setQty(p.id, qty + 1),
+    }, icon('plus', 16)));
 }
 
 // ---------- Catalogue ----------
@@ -69,7 +90,7 @@ function renderCatalog() {
 
 function productCard(p) {
   const idx = Math.min(imageIndex.get(p.id) || 0, Math.max(0, p.images.length - 1));
-  const inCart = state.cart.has(p.id);
+  const qty = state.cart.get(p.id) || 0;
 
   const media = h('div', { class: 'product-media' },
     p.images.length
@@ -85,11 +106,11 @@ function productCard(p) {
         }, h('img', { src, alt: '', loading: 'lazy' }))))
     : null;
 
-  const addBtn = inCart
-    ? h('button', { type: 'button', class: 'btn btn-added btn-sm', onclick: openCart }, icon('check', 18), 'Dans le panier')
+  const addBtn = qty
+    ? stepper(p, qty)
     : h('button', {
         type: 'button', class: 'btn btn-primary btn-sm',
-        onclick: () => { setInCart(p.id, true); toast(`« ${p.title} » ajouté au panier`); },
+        onclick: () => { setQty(p.id, 1); toast(`« ${p.title} » ajouté au panier`); },
       }, icon('plus', 18), 'Ajouter');
 
   return h('article', { class: 'card' },
@@ -111,20 +132,20 @@ function renderCart() {
   $('cartTitle').textContent = state.step === 'checkout' ? 'Livraison' : state.step === 'done' ? 'Commande envoyée' : 'Votre panier';
 
   if (state.step === 'done') return renderDone(body);
-  const items = cartItems();
-  if (!items.length) {
+  const lines = cartLines();
+  if (!lines.length) {
     body.append(h('p', { class: 'empty' }, 'Votre panier est vide.'));
     return;
   }
-  if (state.step === 'checkout') return renderCheckout(body, foot, items);
+  if (state.step === 'checkout') return renderCheckout(body, foot, lines);
 
-  for (const p of items) {
+  for (const { p, qty } of lines) {
     body.append(h('div', { class: 'cart-line' },
       h('div', { class: 'mini' }, p.images[0] ? h('img', { src: p.images[0], alt: '' }) : imagePlaceholder()),
       h('div', {},
         h('div', { class: 'line-title' }, p.title),
-        h('div', { class: 'line-sub' }, formatPrice(p.price))),
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': `Retirer ${p.title} du panier`, onclick: () => setInCart(p.id, false) }, icon('trash', 16))));
+        h('div', { class: 'line-sub' }, qty > 1 ? `${qty} × ${formatPrice(p.price)} = ${formatPrice(p.price * qty)}` : formatPrice(p.price))),
+      stepper(p, qty)));
   }
 
   foot.append(
@@ -176,9 +197,10 @@ function textField(key, attrs) {
     fieldError(key));
 }
 
-function renderCheckout(body, foot, items) {
+function renderCheckout(body, foot, lines) {
   const recap = h('div', { class: 'recap', 'aria-label': 'Récapitulatif' },
-    items.map((p) => h('div', { class: 'recap-line' }, h('span', {}, p.title), h('span', {}, formatPrice(p.price)))),
+    lines.map(({ p, qty }) => h('div', { class: 'recap-line' },
+      h('span', {}, qty > 1 ? `${qty} × ${p.title}` : p.title), h('span', {}, formatPrice(p.price * qty)))),
     h('div', { class: 'recap-line total-row' }, h('span', {}, 'Total à payer sur place'), h('span', {}, formatPrice(cartTotal()))));
 
   const form = h('form', { class: 'form', id: 'checkoutForm', novalidate: true, onsubmit: submitOrder },
@@ -225,7 +247,7 @@ async function submitOrder(e) {
       method: 'POST',
       body: {
         name: state.draft.name, address: state.draft.address, phone: state.draft.phone, payOnDelivery: true,
-        items: [...state.cart],
+        items: cartLines().map(({ p, qty }) => ({ id: p.id, qty })),
       },
     });
     state.lastOrder = { ...res, phone: state.draft.phone.trim() };
@@ -272,7 +294,7 @@ function closeCart() {
 }
 
 function renderBadges() {
-  const n = state.cart.size;
+  const n = cartCount();
   const badge = $('cartBadge');
   badge.hidden = n === 0;
   badge.textContent = n;

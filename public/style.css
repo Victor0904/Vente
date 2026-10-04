@@ -326,3 +326,10 @@ dialog.modal::backdrop { background: rgb(0 0 0 / .65); }
 #mine { display: flex; flex-direction: column; gap: var(--space-3); }
 .order-actions { align-items: center; }
 .settings-card { max-width: 560px; padding: var(--space-5); }
+
+/* ---------- Quantité (− 2 +) ---------- */
+.stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px; }
+.stepper .icon-btn { width: 36px; height: 36px; border: 0; background: transparent; }
+.stepper .icon-btn:hover:not(:disabled) { background: var(--card); }
+.qty { min-width: 26px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--fg); }
+.cart-line .stepper { align-self: center; }
